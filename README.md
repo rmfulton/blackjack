@@ -26,7 +26,7 @@ Compile and run at command line with
 or equivalent for your OS.
 
 #### BS_flatbet.c
-simulates heads-up play between a basic strategy player (as defined by [Colin Jones](https://www.blackjackapprenticeship.com/blackjack-strategy-charts/)) and a dealer. Variables in main() function specify the # of decks, the shoe penetration, and rule variations. Outputs the simulated expectation per dollar bet at the overall game, as well as at every given true count from -9 to +9.
+simulates heads-up play between a basic strategy player (as defined by [Colin Jones](https://www.blackjackapprenticeship.com/blackjack-strategy-charts/)) and a dealer. Variables in main() function specify the # of decks, the shoe penetration, and rule variations. Outputs the simulated expectation per dollar bet at the overall game, as well as at every given true count from -15 to +15. (this can be changed in the main function)
 Compile and run at command line with
 `gcc BS_flatbet.c -lm; ./a.out`
 or equivalent with your OS.
