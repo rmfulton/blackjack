@@ -53,8 +53,8 @@ void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, 
 //////////////////////////
 // tested functionality //
 //////////////////////////
-void printResults(list *tc, flist *payoffs);
-void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], flist **payoffs, list **tc);
+void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares);
+void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], int q, int *tcFreq, double *totalReturn, double *totalSquares);
 double netPayoff(hlist *player, clist *d);
 void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss);
 clist* makeShoe(int numDecks);
@@ -116,92 +116,68 @@ What specifies the Game?
 */
 int main(){
     srand(time(0));
-    int rsa = 1, das = 1, numDecks = 6, cutCard =26, h17 = 1, LS = 1;
+    int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 1, LS = 1;
     int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
     
     int N; // the # of shoes to play through
-    flist *payoffs = NULL;
-    list *tc = NULL;
     char newline;
+
+    int q = 31; // number of counts I will track, from -q/2 to +q/2
+    int *tcFreq = calloc(q, sizeof(int));
+    double *totalReturn = calloc(q, sizeof(double)); //use this to calculate expectations
+    double *totalSquares = calloc(q,sizeof(long double)); //use this to calculate variance
 
     printf("How many shoes would you like to play through? ");
     scanf("%d", &N);
     scanf("%c", &newline);
 
-    simulate(N, numDecks, cutCard, h17, das, rsa, LS, canDoubleOn, &payoffs, &tc);
-    printResults(tc, payoffs);
+    simulate(N, numDecks, cutCard, h17, das, rsa, LS, canDoubleOn, q, tcFreq, totalReturn,totalSquares);
+    printResults(q, tcFreq, totalReturn, totalSquares);
 
+    free(tcFreq);
+    free(totalReturn);
+    free(totalSquares);
     // test();
-
-    freelist(tc);
-    freeflist(payoffs);
 
     return 0;
 }
 // results functions
-void printResults(list *tc, flist *payoffs){
+void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
     int N =0;
-    int quantity = 21;
-    int tcFreq[21] = {0}; // endpts represent -5 or smaller, and 5 or greater.
-    double tcSumPayout[21] = {0};
-    double tcVarPayout[21] = {0};
-    double overall_sum;
-    double overall_var;
-    int count;
-    double pay;
-    int index;
-    flist* tmp = payoffs;
-    for( list* p = tc; p != NULL; p = p->next){
-        count = p->data;
-        pay = tmp->data;
+    double S = 0;
+    double sq = 0;
 
-        if (count < - (quantity/2)){
-            index =0;
-        } else if (count > quantity/2){
-            index = quantity-1;
-        } else {
-            index = quantity/2 + count;
-        }
-
-        tcFreq[index] += 1;
-        tcSumPayout[index] += pay;
-
-        N++;
-        overall_sum += pay;
-        tmp = tmp->next;
+    double mu;
+    double var;
+    for (int i = 0; i < q;i++){
+        N += tcFreq[i];
+        S += totalReturn[i];
+        sq += totalSquares[i];
     }
-    tmp = payoffs;
-    for (list* p = tc; p != NULL; p = p->next){
-        count = p->data;
-        pay = tmp->data;
-
-        if (count < - (quantity/2)){
-            index =0;
-        } else if (count > quantity/2){
-            index = quantity-1;
-        } else {
-            index = quantity/2 + count;
-        }
-
-        tcVarPayout[index] += (pay - tcSumPayout[index]/tcFreq[index])*(pay - tcSumPayout[index]/tcFreq[index]);
-        overall_var += (pay - overall_sum/N)*(pay - overall_sum/N);
-
-        tmp = tmp->next;
+    mu = S/N;
+    var = sq - mu*mu;
+    printf("%d bets were made, with avg expectation %.4lf +- %.4lf\n\n", N,mu, 2*sqrt(var)/N);
+    mu = totalReturn[0]/tcFreq[0];
+    var = totalSquares[0] - mu*mu;
+    printf("%d bets were made at or below a true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[0], -q/2, mu, 2*sqrt(var)/tcFreq[0]);
+    for (int i = 1; i < q-1; i++){
+        mu = totalReturn[i]/tcFreq[i];
+        var = totalSquares[i] - mu*mu;
+        printf("%d bets were made at true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[i], i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
     }
-    printf("%d bets were made, with avg expectation %.4lf +- %.4lf\n\n", N,overall_sum/N, 2*sqrt(overall_var)/N);
-    printf("%d bets were made at or below a true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[0], -quantity/2, tcSumPayout[0]/tcFreq[0], 2*sqrt(tcVarPayout[0])/tcFreq[0]);
-    for (int i = 1; i < quantity-1; i++){
-        printf("%d bets were made at true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[i], i - quantity/2, tcSumPayout[i]/tcFreq[i], 2*sqrt(tcVarPayout[i])/tcFreq[i]);
-    }
-    printf("%d bets were made at or above a true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[quantity-1],quantity/2, tcSumPayout[quantity-1]/tcFreq[quantity-1], 2*sqrt(tcVarPayout[quantity-1])/tcFreq[quantity-1]);
+    mu = totalReturn[q-1]/tcFreq[q-1];
+    var = totalSquares[q-1] - mu*mu;
+    printf("%d bets were made at or above a true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
 }
 
 // gameplay functions
 
-void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], flist **payoffs, list **tc){ //tested
+void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23],
+              int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
     clist *s, *d = NULL;
     hlist *player;
     int ss, rc; //shoe size, runningcount
+    int tc, index;
     double payoff;
     //debug
     char input;
@@ -212,12 +188,16 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
         while(ss > cutCard){
 
 
-            // record the true count, so that -1 < tc < 0 records as 0
+            // record the true count, so that -1 < tc < 1 records as 0
+            // and tc < -q/2 records as -q/2 and tc > q/2 records as q/2
             if (rc < 0){
-                pushi(-((-rc*52)/ss), tc);
+                tc = -((-rc*52)/ss);
+                index = (tc < -(q/2)) ? 0: q/2 + tc;
             } else {
-                pushi((rc*52)/ss, tc);
+                tc = (rc*52)/ss;
+                index = (tc > q/2) ? q-1: q/2 + tc;
             }
+            tcFreq[index]++;
 
             //TODO: 
             //implement netPayoff
@@ -231,7 +211,8 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
             payoff = netPayoff(player, d);
 
 
-            pushf(payoff, payoffs);
+            totalReturn[index] += payoff;
+            totalSquares[index] += payoff*payoff;
             
             freehlist(player);
             freeclist(d);
