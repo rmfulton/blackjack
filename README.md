@@ -45,5 +45,6 @@ or equivalent with your OS.
 #### S17_flatbet.c
 Simulates heads up play between a player using H17 deviations (as defined on [BJA]( https://www.blackjackapprenticeship.com/wp-content/uploads/2019/07/BJA_S17.pdf?utm_source=getresponse&utm_medium=email&utm_campaign=bja_deviations_charts&utm_content=Here+are+your+Blackjack+Deviations+Charts)) and a dealer. Variables in main() function specify the # of decks, the shoe penetration, and rule variations. Outputs the simulated expectation per dollar bet at the overall game, as well as at every given true count from -15 to +15. (this can be changed in the main function)
 Compile and run at command line with
+
 `gcc BS_flatbet.c -lm; ./a.out`
 or equivalent with your OS.
