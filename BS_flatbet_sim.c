@@ -43,13 +43,10 @@ struct handList {
 };
 typedef struct handList hlist;
 
-typedef struct intList {int data;struct intList *next;} list;
-typedef struct fList {double data; struct fList *next;} flist;
-
 
 // function declarations
 void printState(hlist *player, clist *dealer, int rc, int ss);
-void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], flist **payoffs, list **tc);
+void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], int q, int *tcFreq, double *totalReturn, double *totalSquares);
 //////////////////////////
 // tested functionality //
 //////////////////////////
@@ -70,12 +67,6 @@ int shouldHit(hand*h, card upCard, int rc, int ss);
 int isSoft(clist *L);
 void dealerTurn(hlist *player, clist **s,clist **d, int *rc, int *ss,int h17);
 //struct methods
-list* makelist( int data);
-void freelist( list* L);
-void pushi(int data, list **L);
-flist* makeflist(double data);
-void freeflist(flist* L);
-void pushf(double data, flist **L);
 clist* makeclist(card c);
 void freeclist(clist* L);
 void pushc(card data, clist **L);
@@ -116,7 +107,7 @@ What specifies the Game?
 */
 int main(){
     srand(time(0));
-    int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 1, LS = 1;
+    int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 0, LS = 1;
     int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
     
     int N; // the # of shoes to play through
@@ -179,8 +170,6 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
     int ss, rc; //shoe size, runningcount
     int tc, index;
     double payoff;
-    //debug
-    char input;
     for (int i = 0; i < N; i++){
         s = makeShoe(numDecks);
         ss = numDecks*52;
@@ -224,10 +213,12 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
     }
 
 }
-void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], flist **payoffs, list **tc){ //tested
+void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23],
+              int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
     clist *s, *d = NULL;
     hlist *player;
     int ss, rc; //shoe size, runningcount
+    int tc, index;
     double payoff;
     //debug
     char input;
@@ -238,12 +229,16 @@ void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, 
         while(ss > cutCard){
 
 
-            // record the true count, so that -1 < tc < 0 records as 0
+            // record the true count, so that -1 < tc < 1 records as 0
+            // and tc < -q/2 records as -q/2 and tc > q/2 records as q/2
             if (rc < 0){
-                pushi(-((-rc*52)/ss), tc);
+                tc = -((-rc*52)/ss);
+                index = (tc < -(q/2)) ? 0: q/2 + tc;
             } else {
-                pushi((rc*52)/ss, tc);
+                tc = (rc*52)/ss;
+                index = (tc > q/2) ? q-1: q/2 + tc;
             }
+            tcFreq[index]++;
 
             //TODO: 
             //implement netPayoff
@@ -264,7 +259,8 @@ void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, 
             printf("Payoff was %.1lf\n", payoff);
 
 
-            pushf(payoff, payoffs);
+            totalReturn[index] += payoff;
+            totalSquares[index] += payoff*payoff;
             
             freehlist(player);
             freeclist(d);
@@ -277,7 +273,7 @@ void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, 
 
 }
 // returns a shuffled shoe containing an integer # of decks.
-clist* makeShoe(int numDecks){ //testetime(NULL)d
+clist* makeShoe(int numDecks){ //tested
     char suits[13] = {'A','2','3','4','5','6','7','8','9','T','J','Q','K'};
     char *s = malloc(numDecks*52*sizeof(char));
     clist* L;
@@ -629,44 +625,6 @@ double netPayoff(hlist *player, clist *d){ //tested
 }
 // struct methods
 
-list* makelist( int data){ //tested
-    list *L = malloc(sizeof(list));
-    L->data = data;
-    L->next = NULL;
-    return L;
-}
-void freelist( list* L){ //tested
-    list* tmp;
-    while (L != NULL){
-        tmp = L;
-        L = L->next;
-        free(tmp);
-    }
-}
-void pushi(int data, list **L) { //tested
-    list* top = makelist(data);
-    top -> next = *L;
-    *L = top;
-}
-flist* makeflist(double data){ //tested
-    flist *L = malloc(sizeof(flist));
-    L-> data = data;
-    L-> next = NULL;
-    return L;
-}
-void freeflist(flist* L){ //tested
-    flist* tmp;
-    while (L != NULL){
-        tmp = L;
-        L = L->next;
-        free(tmp);
-    }
-}
-void pushf(double data, flist **L) { //tested
-    flist* top = makeflist(data);
-    top -> next = *L;
-    *L = top;
-}
 clist* makeclist(card c){ //tested
     clist* L = malloc(sizeof(clist));
     L->data = c;
@@ -789,8 +747,7 @@ void printState(hlist *player, clist *d, int rc, int ss){
 
 
 void test(){
-    list *L;
-    flist *F;
+
     clist *cards;
     clist *cards2 = NULL;
     hand *h;
@@ -800,23 +757,6 @@ void test(){
     for (int i = 0; i < 23; i++){
         canDoubleOn[i] = 1;
     }
-    // // tests for makeList, pushi, freeList
-    // printf("tests for list methods:\n");
-    // L = makelist(1);
-    // pushi(2, &L);
-    // printf("first element should be 2: %d\n", L->data);
-    // printf("second element should be 1: %d\n",L->next->data);
-    // freelist(L);
-    // printf("\n");
-
-    // // tests for makeflist, pushf, freeflist
-    // printf("tests for flist methods:\n");
-    // F = makeflist(1.0);
-    // pushf(3.0,&F);
-    // printf("first element should be 3.0: %.1lf\n", F->data);
-    // printf("second element should be 1.0: %.1lf\n", F->next->data);
-    // freeflist(F);
-    // printf("\n");
 
     // // tests for makeclist, freeclist, makeclistfromArr, makeShoe, printCards, (implicitly fisherYates and swap)
     // printf("test for clist methods and makeShoe\n");
