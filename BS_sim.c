@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <time.h>
 #include <math.h>
 
@@ -42,7 +43,7 @@ struct handList {
     struct handList* next;
 };
 typedef struct handList hlist;
-
+typedef struct { uint64_t state;  uint64_t inc; } pcg32_random_t;
 
 // function declarations
 void printState(hlist *player, clist *dealer, int rc, int ss);
@@ -54,9 +55,10 @@ void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares)
 void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], int q, int *tcFreq, double *totalReturn, double *totalSquares);
 double netPayoff(hlist *player, clist *d);
 void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss);
-clist* makeShoe(int numDecks);
-void fisherYates(int numCards, card cards[]);
+clist* makeShoe(int numDecks, pcg32_random_t *rng);
+void fisherYates(int numCards, card cards[], pcg32_random_t *rng);
 void swap(card* a, card* b);
+uint32_t pcg32_random_r(pcg32_random_t* rng);
 int removalScore(card c);
 int faceValue(clist* cards);
 void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, int RSA, int sur, int canDoubleOn[23]);
@@ -106,8 +108,7 @@ What specifies the Game?
     as well as the true count (= (RC*52) integer divided by number of cards remaining)
 */
 int main(){
-    srand(time(0));
-    int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 0, LS = 1;
+    int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 1, LS = 1;
     int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
     
     int N; // the # of shoes to play through
@@ -170,8 +171,10 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
     int ss, rc; //shoe size, runningcount
     int tc, index;
     double payoff;
+    pcg32_random_t rng = (pcg32_random_t) {42u, 54u};
+
     for (int i = 0; i < N; i++){
-        s = makeShoe(numDecks);
+        s = makeShoe(numDecks, &rng);
         ss = numDecks*52;
         rc = 0;
         while(ss > cutCard){
@@ -220,10 +223,11 @@ void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, 
     int ss, rc; //shoe size, runningcount
     int tc, index;
     double payoff;
+    pcg32_random_t rng = (pcg32_random_t) {42u, 54u};
     //debug
     char input;
     for (int i = 0; i < N; i++){
-        s = makeShoe(numDecks);
+        s = makeShoe(numDecks, &rng);
         ss = numDecks*52;
         rc = 0;
         while(ss > cutCard){
@@ -273,7 +277,7 @@ void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, 
 
 }
 // returns a shuffled shoe containing an integer # of decks.
-clist* makeShoe(int numDecks){ //tested
+clist* makeShoe(int numDecks, pcg32_random_t *rng){ //tested
     char suits[13] = {'A','2','3','4','5','6','7','8','9','T','J','Q','K'};
     char *s = malloc(numDecks*52*sizeof(char));
     clist* L;
@@ -282,17 +286,17 @@ clist* makeShoe(int numDecks){ //tested
             s[13*rep + i] = suits[i];
         }
     }
-    fisherYates(numDecks*52, s);
+    fisherYates(numDecks*52, s, rng);
     L = makeclistFromArr(s,52*numDecks);
     free(s);
     return L;
 }
 
-void fisherYates(int numCards, card cards[]) { //tested
+void fisherYates(int numCards, card cards[], pcg32_random_t *rng) { //tested
     card tmp;
     int j;
     for (int i =0; i< numCards - 1; i++) {
-        j = i + rand()%(numCards - i);
+        j = i + pcg32_random_r(rng)%(numCards - i);
         swap(&cards[i], &cards[j]);
     }
 }
@@ -300,6 +304,21 @@ void swap(card* a, card* b) { //tested
     card tmp = *a;
     *a = *b;
     *b = tmp;
+}
+/*
+A Permuted Congruential PRNG.
+Thanks for inventing these Prof. O'Neill!
+I owe you one!
+*/
+uint32_t pcg32_random_r(pcg32_random_t* rng)
+{
+    uint64_t oldstate = rng->state;
+    // Advance internal state
+    rng->state = oldstate * 6364136223846793005ULL + (rng->inc|1);
+    // Calculate output function (XSH RR), uses old state for max ILP
+    uint32_t xorshifted = ((oldstate >> 18u) ^ oldstate) >> 27u;
+    uint32_t rot = oldstate >> 59u;
+    return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
 int removalScore(card c){ //tested
