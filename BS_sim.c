@@ -152,18 +152,18 @@ void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares)
     }
     mu = S/N;
     var = sq - mu*mu;
-    printf("%d bets were made, with avg expectation %.4lf +- %.4lf\n\n", N,mu, 2*sqrt(var)/N);
+    printf("%10d bets were made overall, with aggreg. exp. %8.5lf +- %.5lf\n\n", N,mu, 2*sqrt(var)/N);
     mu = totalReturn[0]/tcFreq[0];
     var = totalSquares[0] - mu*mu;
-    printf("%d bets were made at or below a true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[0], -q/2, mu, 2*sqrt(var)/tcFreq[0]);
+    printf("%10d bets were made <= true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[0], -q/2, mu, 2*sqrt(var)/tcFreq[0]);
     for (int i = 1; i < q-1; i++){
         mu = totalReturn[i]/tcFreq[i];
         var = totalSquares[i] - mu*mu;
-        printf("%d bets were made at true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[i], i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
+        printf("%10d bets were made at true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[i], i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
     }
     mu = totalReturn[q-1]/tcFreq[q-1];
     var = totalSquares[q-1] - mu*mu;
-    printf("%d bets were made at or above a true %d, with avg exp. %.4lf +- %.4lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
+    printf("%10d bets were made >= true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
 }
 
 // gameplay functions
