@@ -4,20 +4,6 @@
 #include <time.h>
 #include <math.h>
 
-/*
-WHAT ARE THE FUNKY RULES THAT ARISE WHEN YOU SPLIT ACES?
-- after splitting aces, you cannot surrender, double, or hit resulting hands,
-- but you may (if RSA) resplit them
-- tens dealt to split aces do not count as blackjack, and count as 21.
-
-
-TODO:
-    IMPLEMENT AND TEST:
-        printResults
-    TEST:
-        pushh maybe?
-*/
-
 typedef char card;
 
 struct cardList {
@@ -80,33 +66,9 @@ hand* makeemptyhand();
 int numCards(hand* h);
 void freehand(hand *h);
 hlist* makehlist(hand *h);
-void pushh(hand *h, hlist **L);
 void freehlist(hlist *L);
 void printPlayer(hlist *L);
 
-void test();
-/*
-What specifies the Game?
-    - player betting strategy (here flatbet)
-    - player # of hands (here 1)
-
-    - player permitted playing strategy (here Basic Strategy according to blackjack apprenticeship)
-        - can you resplit aces? (standard yes)
-        - can you double after splitting (standard yes)
-        - which hands are you allowed to double down on (standard all 2 card hands)
-        - are you allowed to surrender hands? (standard yes)
-    
-    - Game parameters
-        - number of decks in use (standard is 6 decks)
-        - penetration before shuffle (standard is 1.5 decks)
-    
-    - Dealer playing strategy
-        - does dealer hit soft 17? (standard yes)
-
-    What do we want to know from the simulation?
-    We want to know the result of every round
-    as well as the true count (= (RC*52) integer divided by number of cards remaining)
-*/
 int main(){
     int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 1, LS = 1;
     int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
@@ -138,7 +100,7 @@ int main(){
     return 0;
 }
 // results functions
-void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
+void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares){ //gives desired output
     int N =0;
     double S = 0;
     double sq = 0;
@@ -165,8 +127,9 @@ void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares)
     var = totalSquares[q-1] - mu*mu;
     printf("%10d bets were made >= true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
 }
-
-// gameplay functions
+///////////////////////////////
+///// gameplay functions //////
+///////////////////////////////
 
 void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23],
               int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
@@ -356,7 +319,7 @@ void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss){//te
 }
 
 void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, int RSA, int LS, int canDoubleOn[23]){ //tested
-    hlist *hp, *tmp;
+    hlist *tmp;
     hand *h;
 
     int numspl = 0; // tracks the number of times we've split a hand. max 3 allowed
@@ -367,8 +330,7 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
     }
 
     // while there are unplayed hands
-    hp = *player;
-    while (hp != NULL){
+    for (hlist* hp = *player; hp != NULL;){
         h = hp->data;
 
         // split Fork Pt. 2
@@ -390,7 +352,7 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
 
 
         // play through the current hand
-        // Surrender Fork
+
         if (shouldSurrender(h,d->data, *rc, *ss, LS)){
 
             h->surrendered = 1;
@@ -404,9 +366,10 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
             tmp = hp->next;
             hp->next = makehlist(makeemptyhand());
             hp->next->next = tmp;
-            deal(&(hp->data->cards), &(hp->next->data->cards)); // give one of the cards to the next hand.
+            // give one of the cards to the next hand.
+            deal(&(hp->data->cards), &(hp->next->data->cards));
         }
-        // Double Down Fork
+
         else if ( shouldDouble(h, d->data, *rc, *ss, canDoubleOn)) {
             deal(s,&(h->cards));
             *rc += removalScore(h->cards->data);
@@ -415,17 +378,16 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
 
             hp = hp->next;
         }
-        // Hit Fork
+
         else if (shouldHit(h, d->data, *rc, *ss)){
             deal(s,&(h->cards));
             *rc += removalScore(h->cards->data);
             (*ss)--;
         } 
-        // Stand Fork
+
         else {
             hp = hp->next;
         }
-        // move the hand pointer forward after standing, doubling down, or surrendering - busting will result in standing.
     }
 }
 
@@ -514,12 +476,13 @@ int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){ //tes
 }
 
 int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){ //tested
-    if ((!h->canDouble) || (faceValue(h->cards) > 21) || ( !canDoubleOn[faceValue(h->cards)] ) || (numCards(h)!= 2)){
+    int v = facevalue(h->cards);
+    if ((!h->canDouble) || (v > 21) || (v < 0) || ( !canDoubleOn[v] ) || (numCards(h)!= 2)){
         return 0;
     }
 
     if (isSoft(h->cards)){
-        switch (faceValue(h->cards)){
+        switch (v){
             case 19:
                 return upCard == '6';
             case 18:
@@ -538,7 +501,7 @@ int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){ //t
                 return 0;
         }
     } else {
-        switch(faceValue(h->cards)){
+        switch(v){
             case 11:
                 return 1;
             case 10:
@@ -552,18 +515,19 @@ int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){ //t
 }
 
 int shouldHit(hand*h, card upCard, int rc, int ss){ //tested
-    if ((!h->canHit) || (faceValue(h->cards) > 20) || (faceValue(h->cards) < 0)) {
+    int v = faceValue(h->cards);
+    if ((!h->canHit) || (v > 20) || (v < 0)) {
         return 0;
     }
 
     if (isSoft(h->cards)){
-        return (faceValue(h->cards) < 18) || ( (faceValue(h->cards) == 18) && ( upCard > '8' ));
+        return (v < 18) || ( (v == 18) && ( upCard > '8' ));
     } else {
-        if (faceValue(h->cards) < 12){
+        if (v < 12){
             return 1;
-        } else if ((faceValue(h->cards) < 17) && ('7' <= upCard)) {
+        } else if ((v < 17) && ('7' <= upCard)) {
             return 1;
-        } else if (faceValue(h->cards) == 12) {
+        } else if (v == 12) {
             return ((upCard == '2') || (upCard == '3'));
         }
         return 0;
@@ -730,12 +694,6 @@ hlist* makehlist(hand *h){ //tested
     L -> data = h;
     L -> next = NULL;
     return L;
-}
-
-void pushh(hand *h, hlist **L){ //UNTESTED
-    hlist* top = makehlist(h);
-    top -> next = *L;
-    *L = top;
 }
 
 void freehlist(hlist *L){ //tested
