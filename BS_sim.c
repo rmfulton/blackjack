@@ -354,7 +354,7 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
             *rc += removalScore(h->cards->data);
             (*ss)--;
 
-            h->canDouble = (DAS &&(numspl<3));
+            h->canDouble = DAS;
 
             //rules are much more restrictive when splitting Aces
             if (h->cards->next->data == 'A'){
@@ -509,10 +509,26 @@ int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){
             return 0;
     }
 }
-
+/*
+In BS, you MAY double down if you have exactly two cards
+                          AND you have not split under NDAS rules
+                          AND you have not split Aces
+                          AND the rules permit doubling on your total
+       you SHOULD double down
+            - if you have a hard total of 
+                - 11
+                - 10 and the dealer's upcard <= '9'
+                - 9 and the dealer's upCard is between 3 and 6, inclusive
+            - OR if you have a soft total of 
+                - 13 or 14 and the dealer's upCard is 5 or 6
+                - 15 or 16 and the dealer's upCard is 4,5,or 6
+                - 17 and the dealer's upCard is 3,4,5, or 6
+                - 18 and the dealer's upCard is 2,3,4,5,or6
+                - 19 and the dealer's upcard is 6.
+*/
 int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){
     int v = faceValue(h->cards);
-    if ((!h->canDouble) || (v > 21) || (v < 0) || ( !canDoubleOn[v] ) || (numCards(h)!= 2)){
+    if ( !h->canDouble || !canDoubleOn[v] || numCards(h)!= 2){
         return 0;
     }
 
@@ -521,17 +537,17 @@ int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){
             case 19:
                 return upCard == '6';
             case 18:
-                return (upCard <= '6');
+                return upCard <= '6';
             case 17:
-                return ('3' <= upCard) && (upCard <= '6');
+                return '3' <= upCard && upCard <= '6';
             case 16:
-                return ('4' <= upCard) && (upCard <= '6');
+                return '4' <= upCard && upCard <= '6';
             case 15:
-                return ('4' <= upCard) && (upCard <= '6');
+                return '4' <= upCard && upCard <= '6';
             case 14:
-                return ('5' <= upCard) && (upCard <= '6');
+                return '5' <= upCard && upCard <= '6';
             case 13:
-                return ('5' <= upCard) && (upCard <= '6');
+                return '5' <= upCard && upCard <= '6';
             default:
                 return 0;
         }
@@ -540,9 +556,9 @@ int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){
             case 11:
                 return 1;
             case 10:
-                return (upCard <= '9');
+                return upCard <= '9';
             case 9:
-                return ('3' <= upCard) && (upCard <= '6');
+                return '3' <= upCard && upCard <= '6';
             default:
                 return 0;
         }
