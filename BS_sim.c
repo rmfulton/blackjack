@@ -481,7 +481,7 @@ int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){
     // we test for value equality because you can split AK, for example.
     tmp = h->cards->next;
     h->cards->next = NULL;
-    if (faceValue(h->cards->data) != faceValue(tmp->data)){
+    if (faceValue(h->cards) != faceValue(tmp)){
         h->cards->next = tmp;
         return 0;
     }
