@@ -15,7 +15,6 @@ typedef struct cardList clist;
 struct hand {
     clist *cards;
 
-    int canSurrender;
     int canSplit;
     int canDouble;
     int canHit;
@@ -360,12 +359,10 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
             //rules are much more restrictive when splitting Aces
             if (h->cards->next->data == 'A'){
                 h->canHit = 0;
-                h->canSurrender = 0;
                 h->canDouble = 0;
                 h->canSplit = RSA;
             }
         }
-
 
         // play through the current hand
  
@@ -440,9 +437,13 @@ int faceValue(clist* cards) {
 		return total > 11 ? total : total + 10;
 	}	
 }
-
+/*
+In BS, you should surrender if LS is offered and
+    - you have a hard 15 against a ten valued card OR
+    - you have a hard 16 against a 9,T,J,Q,K, or A
+*/
 int shouldSurrender(hand *h, card upCard, int rc, int ss, int LS){
-    if ((h->canSurrender == 0) || (isSoft(h->cards)) || (numCards(h) != 2) || !LS) {
+    if ( isSoft(h->cards) || !LS) {
         return 0;
     }
     switch (faceValue(h->cards)){
@@ -454,33 +455,56 @@ int shouldSurrender(hand *h, card upCard, int rc, int ss, int LS){
             return 0;
     }
 }
+/*
+In BS, you MAY split if you have exactly two cards of the same value
+                    AND you have split fewer than 3 times prior
+                    AND you have not split aces under NRSA rules.
+       you SHOULD split Aces
+                        Eights
+                        Nines except against 7s Tens and Aces
+                        7s up to 7
+                        6s up to 6 (against 2 only if DAS allowed)
+                        4s against 5&6 if DAS allowed
+                        3s up to 7 (against 2&3 only if DAS allowed)
+                        2s up to 7 (against 2&3 only if DAS allowed)
+       you SHOULD NOT split Tens
+                        and 5s
 
+*/
 int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){
-    // some (possibly redundant) safeguards
-    if ((!h->canSplit) || (numCards(h) != 2) || (numspl >= 3)){
+    clist *tmp;
+
+    // safeguards
+    if ( numCards(h) != 2 || numspl >= 3 || !h->canSplit){
         return 0;
     }
-    if (h->cards->data != h->cards->next->data){
+    // we test for value equality because you can split AK, for example.
+    tmp = h->cards->next;
+    h->cards->next = NULL;
+    if (faceValue(h->cards->data) != faceValue(tmp->data)){
+        h->cards->next = tmp;
         return 0;
     }
+    h->cards->next = tmp;
+
     // now, we know it is theoretically possbile, but perhaps not advisable, to split
     switch (h->cards->data){
         case 'A':
             return 1;
         case '2':
-            return (das && ('2' <= upCard) && (upCard <= '3')) || ( ('4' <= upCard) && (upCard <= '7'));
+            return (das && upCard <= '3') || ( '4' <= upCard && upCard <= '7');
         case '3':
-            return (das && ('2' <= upCard) && (upCard <= '3')) || (('4' <= upCard) && (upCard <= '7'));
+            return (das && upCard <= '3') || ( '4' <= upCard && upCard <= '7');
         case '4':
-            return (das && ('5' <= upCard) && (upCard <= '6'));
+            return (das && '5' <= upCard && upCard <= '6');
         case '6':
-            return (das &&  upCard == '2') || (('3' <= upCard ) &&(upCard <= '6'));
+            return (das &&  upCard == '2') || ('3' <= upCard  && upCard <= '6');
         case '7':
             return (upCard <= '7');
         case '8':
             return 1;
         case '9':
-            return (upCard != '7') &&(upCard <= '9');
+            return (upCard != '7') && (upCard <= '9');
         default:
             return 0;
     }
@@ -683,7 +707,6 @@ hand* makeemptyhand(){
     hand *h = malloc(sizeof(hand));
     h->cards = NULL;
     // action flags
-    h->canSurrender = 1;
     h->canSplit = 1;
     h->canDouble = 1;
     h->canHit = 1;
