@@ -564,27 +564,42 @@ int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){
         }
     }
 }
+/*
+In BS, you MAY hit if your faceValue is between 0 and 20,
+                    you have not split aces (i.e., canHit = 1)
+       you SHOULD hit if
+            - you have a soft hand and
+                - your faceValue is less than 18 OR
+                - your faceValue is 18 and the dealer's upCard is at least 9
+            - you have a hard total and
+                - the dealer's upcard is more than 6 and your total is at most 16
+                - your total is atmost 11
+                - your total is 12 andthe dealer's' upcard is 2 or 3
 
+*/
 int shouldHit(hand*h, card upCard, int rc, int ss){ 
     int v = faceValue(h->cards);
-    if ((!h->canHit) || (v > 20) || (v < 0)) {
+    if ( !h->canHit || v > 20 || v < 0) {
         return 0;
     }
 
     if (isSoft(h->cards)){
-        return (v < 18) || ( (v == 18) && ( upCard > '8' ));
+        return v < 18 || ( v == 18 && upCard > '8');
     } else {
         if (v < 12){
             return 1;
-        } else if ((v < 17) && ('7' <= upCard)) {
+        } else if (v < 17 && '7' <= upCard) {
             return 1;
         } else if (v == 12) {
-            return ((upCard == '2') || (upCard == '3'));
+            return (upCard == '2' || upCard == '3');
         }
         return 0;
     }
 }
-
+/*
+a hand is soft if it contains an ace and its value is at most 11,
+counting aces as ones
+*/
 int isSoft(clist *L){
     int total = 0;
     int numAces = 0;
@@ -602,9 +617,13 @@ int isSoft(clist *L){
             total += c - '0';
         }
     }
-    return (numAces > 0) && (total < 11);
+    return (numAces > 0) && (total < 12);
 }
-
+/*
+If the player has surrendered or achieved blackjack, or has busted all hands,then return.
+If the dealer has achieved blackjack, then return.
+Otherwise, keep hitting until the dealer exceeds a hard 17, or a soft (17 + h17), or busts
+*/
 void dealerTurn(hlist *player, clist **s,clist **d, int *rc, int *ss,int h17){
     int allLost = 1;
 
@@ -616,14 +635,14 @@ void dealerTurn(hlist *player, clist **s,clist **d, int *rc, int *ss,int h17){
     if (player->data->isBJ){
         return; //dealer pushes or loses
     }
+    if (player->data->surrendered){
+        return;
+    }
 
 
     for (hlist* p = player; p != NULL; p=p->next){
         if (faceValue(p->data->cards) > 0){
-            if (p->data->surrendered == 0){
-                allLost = 0;
-                break;
-            }
+            allLost = 0;
         }
     }
     if (allLost){
@@ -643,6 +662,7 @@ double netPayoff(hlist *player, clist *d){
     int playerScore;
     hand *h;
     double payout = 0.0;
+
     for(hlist *p = player; p != NULL; p=p->next){
         h = p->data;
         playerScore = faceValue(h->cards);
