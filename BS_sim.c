@@ -14,10 +14,12 @@ typedef struct cardList clist;
 
 struct hand {
     clist *cards;
+
     int canSurrender;
     int canSplit;
     int canDouble;
     int canHit;
+
     int surrendered;
     int isBJ;
     int doubledDown;
@@ -33,12 +35,8 @@ typedef struct { uint64_t state;  uint64_t inc; } pcg32_random_t;
 
 // function declarations
 void printState(hlist *player, clist *dealer, int rc, int ss);
-void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], int q, int *tcFreq, double *totalReturn, double *totalSquares);
-//////////////////////////
-// tested functionality //
-//////////////////////////
-void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares);
-void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], int q, int *tcFreq, double *totalReturn, double *totalSquares);
+void printResults(int q, long int *tcFreq, long double *totalReturn, long double *totalSquares);
+void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23], int q, long int *tcFreq, long double *totalReturn, long double *totalSquares);
 double netPayoff(hlist *player, clist *d);
 void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss);
 clist* makeShoe(int numDecks, pcg32_random_t *rng);
@@ -77,9 +75,9 @@ int main(){
     char newline;
 
     int q = 31; // number of counts I will track, from -q/2 to +q/2
-    int *tcFreq = calloc(q, sizeof(int));
-    double *totalReturn = calloc(q, sizeof(double)); //use this to calculate expectations
-    double *totalSquares = calloc(q,sizeof(double)); //use this to calculate variance
+    long int *tcFreq = calloc(q, sizeof(long int));
+    long double *totalReturn = calloc(q, sizeof(long double)); //use this to calculate expectations
+    long double *totalSquares = calloc(q,sizeof(long double)); //use this to calculate variance
 
     printf("How many shoes would you like to play through? ");
     if (scanf("%d", &N) == 0){
@@ -95,20 +93,19 @@ int main(){
     free(tcFreq);
     free(totalReturn);
     free(totalSquares);
-    // test();
 
     return 0;
 }
 /*
-Should print the following for each true count:
+printResults should print the following for each true count:
     - The # of rounds played
     - The mean payoff
     - 95% confidence interval, as measured by 2*(inter sample deviation)/N
 */
-void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares){ //gives desired output
-    int N =0;
-    double S = 0;
-    double sq = 0;
+void printResults(int q, long int *tcFreq, long double *totalReturn, long double *totalSquares){
+    long int N =0;
+    long double S = 0;
+    long double sq = 0;
 
     double mu;
     double var;
@@ -119,25 +116,25 @@ void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares)
     }
     mu = S/N;
     var = sq - mu*mu;
-    printf("%10d bets were made overall, with aggreg. exp. %8.5lf +- %.5lf\n\n", N,mu, 2*sqrt(var)/N);
+    printf("%11ld bets were made overall, with aggreg. exp. %9.6lf +- %.6lf\n\n", N,mu, 2*sqrt(var)/N);
     mu = totalReturn[0]/tcFreq[0];
     var = totalSquares[0] - mu*mu;
-    printf("%10d bets were made <= true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[0], -q/2, mu, 2*sqrt(var)/tcFreq[0]);
+    printf("%11ld bets were made <= true %3d, with avg exp. %9.6lf +- %.6lf\n", tcFreq[0], -q/2, mu, 2*sqrt(var)/tcFreq[0]);
     for (int i = 1; i < q-1; i++){
         mu = totalReturn[i]/tcFreq[i];
         var = totalSquares[i] - mu*mu;
-        printf("%10d bets were made at true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[i], i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
+        printf("%11ld bets were made at true %3d, with avg exp. %9.6lf +- %.6lf\n", tcFreq[i], i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
     }
     mu = totalReturn[q-1]/tcFreq[q-1];
     var = totalSquares[q-1] - mu*mu;
-    printf("%10d bets were made >= true %3d, with avg exp. %8.5lf +- %.5lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
+    printf("%11ld bets were made >= true %3d, with avg exp. %9.6lf +- %.6lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
 }
 ///////////////////////////////
 ///// gameplay functions //////
 ///////////////////////////////
 
 /*
-This function should play through N numDecks-deck shoes according to Basic 
+simulate should play through N numDecks-deck shoes according to Basic 
 Strategy, with gameplay proceding according to the general rules of Player
 may take insurance (but never does), then may choose whether to surrender,
 then may choose whether to split, then may choose whether to double down,
@@ -186,7 +183,7 @@ following parameters:
 
 */
 void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23],
-              int q, int *tcFreq, double *totalReturn, double *totalSquares){ 
+              int q, long int *tcFreq, long double *totalReturn, long double *totalSquares){ 
     clist *s, *d = NULL;
     hlist *player;
     int ss, rc; //shoe size, runningcount
@@ -235,67 +232,12 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
     }
 
 }
-void debug(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23],
-              int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
-    clist *s, *d = NULL;
-    hlist *player;
-    int ss, rc; //shoe size, runningcount
-    int tc, index;
-    double payoff;
-    pcg32_random_t rng = (pcg32_random_t) {42u, 54u};
 
-    for (int i = 0; i < N; i++){
-        s = makeShoe(numDecks, &rng);
-        ss = numDecks*52;
-        rc = 0;
-        while(ss > cutCard){
-
-
-            // record the true count, so that -1 < tc < 1 records as 0
-            // and tc < -q/2 records as -q/2 and tc > q/2 records as q/2
-            if (rc < 0){
-                tc = -((-rc*52)/ss);
-                index = (tc < -(q/2)) ? 0: q/2 + tc;
-            } else {
-                tc = (rc*52)/ss;
-                index = (tc > q/2) ? q-1: q/2 + tc;
-            }
-            tcFreq[index]++;
-
-            //TODO: 
-            //implement netPayoff
-
-            // deal two cards to player and dealer.
-            initialDeal(&player,&s,&d,&rc,&ss);
-            printf("After initial deal,");
-            printState(player,d,rc,ss);
-
-            playerTurn(&player, &s,d, &rc,&ss, DAS,RSA, LS,canDoubleOn);
-            printf("After playerTurn,");
-            printState(player,d,rc,ss);
-
-            dealerTurn(player,&s,&d,&rc,&ss, h17); // need to know if player busted, or made blackjack.
-            payoff = netPayoff(player, d);
-            printf("After dealerTurn,");
-            printState(player,d,rc,ss);
-            printf("Payoff was %.1lf\n", payoff);
-
-
-            totalReturn[index] += payoff;
-            totalSquares[index] += payoff*payoff;
-            
-            freehlist(player);
-            freeclist(d);
-            d = NULL;
-        }
-
-        freeclist(s);
-        ss = -1;
-    }
-
-}
-// returns a shuffled shoe containing an integer # of decks.
-clist* makeShoe(int numDecks, pcg32_random_t *rng){ //tested
+/*
+makeShoe should populate and return a stack of cards with numDecks
+decks shuffled together.
+*/
+clist* makeShoe(int numDecks, pcg32_random_t *rng){
     char suits[13] = {'A','2','3','4','5','6','7','8','9','T','J','Q','K'};
     char *s = malloc(numDecks*52*sizeof(char));
     clist* L;
@@ -309,15 +251,15 @@ clist* makeShoe(int numDecks, pcg32_random_t *rng){ //tested
     free(s);
     return L;
 }
-
-void fisherYates(int numCards, card cards[], pcg32_random_t *rng) { //tested
+/* The Fisher-Yates algorithm for shuffling an array */
+void fisherYates(int numCards, card cards[], pcg32_random_t *rng) {
     int j;
     for (int i =0; i< numCards - 1; i++) {
         j = i + pcg32_random_r(rng)%(numCards - i);
         swap(&cards[i], &cards[j]);
     }
 }
-void swap(card* a, card* b) { //tested
+void swap(card* a, card* b) {
     card tmp = *a;
     *a = *b;
     *b = tmp;
@@ -325,10 +267,8 @@ void swap(card* a, card* b) { //tested
 /*
 A Permuted Congruential PRNG.
 Thanks for inventing these Prof. O'Neill!
-I owe you one!
 */
-uint32_t pcg32_random_r(pcg32_random_t* rng)
-{
+uint32_t pcg32_random_r(pcg32_random_t* rng){
     uint64_t oldstate = rng->state;
     // Advance internal state
     rng->state = oldstate * 6364136223846793005ULL + (rng->inc|1);
@@ -337,18 +277,21 @@ uint32_t pcg32_random_r(pcg32_random_t* rng)
     uint32_t rot = oldstate >> 59u;
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
-
-int removalScore(card c){ //tested
-    if (('2' <= c) && (c <= '6')){
-        return 1;
-    } else if (('7' <= c) && ( c <= '9')){
-        return 0;
-    } else {
-        return -1;
-    }
+/*
+2, 3, 4, 5, and 6 count as +1 each,
+T, J, Q, K, and A count as -1 each,
+7, 8, and 9 count as 0 each.
+*/
+int removalScore(card c){
+    return (c <'7') - (c > '9');
 }
-
-void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss){//tested
+/*
+initialDeal should give the dealer and the player two cards each,
+alternating. All cards except the hole card should affect the rc
+and the shoe size. If the player has a blackjack, we should 
+recognize it now.
+*/
+void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss){
     *pplayer = makehlist(makeemptyhand());
 
     for (int i = 0;i < 2; i++){
@@ -365,19 +308,40 @@ void initialDeal(hlist **pplayer,clist **ps, clist **pd,int *prc, int* pss){//te
     (*pss)--;
 
     //customize attributes of hand
-    (*pplayer)->data->canSplit = ((*pplayer)->data->cards->data == (*pplayer)->data->cards->next->data);
-    (*pplayer)->data->isBJ = (faceValue((*pplayer)->data->cards) == 22);
+    (*pplayer)->data->isBJ = faceValue((*pplayer)->data->cards) == 22;
 
 }
-
-void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, int RSA, int LS, int canDoubleOn[23]){ //tested
+/*
+playerTurn should play according to the following order of operations
+    - Insurance: In BS, we ignore this option
+    - Check for BJ: If either player or dealer has a BJ, then return
+    - offer surrender: If shouldSurrender, mark hand as surrendered and return.
+    - While the player has unplayed hands:
+        - get the next hand
+        - finish a split if applicable (only 1 card in the hand)
+        - If shouldSplit, add a hand and give it one of the cards,else
+        - If shouldDouble, take a card, mark hand as 
+          doubled down, and mark hand as played. else 
+        - If shouldHit, take a card. else
+        - mark hand as played.
+Whenever a card is dealt, the running count and shoe size should be
+adjusted accordingly.
+*/
+void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, int RSA, int LS, int canDoubleOn[23]){
     hlist *tmp;
     hand *h;
 
     int numspl = 0; // tracks the number of times we've split a hand. max 3 allowed
+
     // insurance? -> NO, never.(remember, this is basic strategy.)
+
     // check if either player has blackjack
     if ((faceValue(d) == 22) || ((*player)->data->isBJ)){
+        return;
+    }
+    // offer surrender
+    if (shouldSurrender((*player)->data,d->data, *rc, *ss, LS)){
+        (*player)->data->surrendered = 1;
         return;
     }
 
@@ -404,12 +368,7 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
 
 
         // play through the current hand
-
-        if (shouldSurrender(h,d->data, *rc, *ss, LS)){
-
-            h->surrendered = 1;
-            hp = hp->next;
-        } 
+ 
         //Split Fork Pt 1.
         else if ( shouldSplit(h, d->data, *rc, *ss,numspl, DAS) ){ 
             //bookkeeping
@@ -443,7 +402,7 @@ void playerTurn(hlist** player, clist **s, clist *d, int *rc, int *ss, int DAS, 
     }
 }
 
-int faceValue(clist* cards) { //tested
+int faceValue(clist* cards) {
 	int total = 0;
 	int num_aces = 0;
     int num_cards = 0;
@@ -482,7 +441,7 @@ int faceValue(clist* cards) { //tested
 	}	
 }
 
-int shouldSurrender(hand *h, card upCard, int rc, int ss, int LS){ //tested
+int shouldSurrender(hand *h, card upCard, int rc, int ss, int LS){
     if ((h->canSurrender == 0) || (isSoft(h->cards)) || (numCards(h) != 2) || !LS) {
         return 0;
     }
@@ -496,7 +455,7 @@ int shouldSurrender(hand *h, card upCard, int rc, int ss, int LS){ //tested
     }
 }
 
-int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){ //tested
+int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){
     // some (possibly redundant) safeguards
     if ((!h->canSplit) || (numCards(h) != 2) || (numspl >= 3)){
         return 0;
@@ -527,7 +486,7 @@ int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){ //tes
     }
 }
 
-int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){ //tested
+int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){
     int v = faceValue(h->cards);
     if ((!h->canDouble) || (v > 21) || (v < 0) || ( !canDoubleOn[v] ) || (numCards(h)!= 2)){
         return 0;
@@ -566,7 +525,7 @@ int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){ //t
     }
 }
 
-int shouldHit(hand*h, card upCard, int rc, int ss){ //tested
+int shouldHit(hand*h, card upCard, int rc, int ss){ 
     int v = faceValue(h->cards);
     if ((!h->canHit) || (v > 20) || (v < 0)) {
         return 0;
@@ -586,7 +545,7 @@ int shouldHit(hand*h, card upCard, int rc, int ss){ //tested
     }
 }
 
-int isSoft(clist *L){ //tested
+int isSoft(clist *L){
     int total = 0;
     int numAces = 0;
     card c;
@@ -606,7 +565,7 @@ int isSoft(clist *L){ //tested
     return (numAces > 0) && (total < 11);
 }
 
-void dealerTurn(hlist *player, clist **s,clist **d, int *rc, int *ss,int h17){ //tested
+void dealerTurn(hlist *player, clist **s,clist **d, int *rc, int *ss,int h17){
     int allLost = 1;
 
 
@@ -639,7 +598,7 @@ void dealerTurn(hlist *player, clist **s,clist **d, int *rc, int *ss,int h17){ /
     }
 }
 
-double netPayoff(hlist *player, clist *d){ //tested
+double netPayoff(hlist *player, clist *d){
     int dealerScore = faceValue(d);
     int playerScore;
     hand *h;
@@ -665,13 +624,13 @@ double netPayoff(hlist *player, clist *d){ //tested
 }
 // struct methods
 
-clist* makeclist(card c){ //tested
+clist* makeclist(card c){
     clist* L = malloc(sizeof(clist));
     L->data = c;
     L->next = NULL;
     return L;
 }
-void freeclist(clist* L){ //tested
+void freeclist(clist* L){
     clist* tmp;
     while(L != NULL){
         tmp = L;
@@ -679,12 +638,12 @@ void freeclist(clist* L){ //tested
         free(tmp);
     }
 }
-void pushc(card data, clist **L){ //tested
+void pushc(card data, clist **L){
     clist* top = makeclist(data);
     top -> next = *L;
     *L = top;
 }
-card popc(clist** L){ //tested
+card popc(clist** L){
     card c;
     clist *tmp;
     if (*L == NULL){
@@ -696,7 +655,7 @@ card popc(clist** L){ //tested
     free(tmp);
     return c;  
 }
-clist* makeclistFromArr(card *arr, int size){ //tested
+clist* makeclistFromArr(card *arr, int size){
     clist *L = NULL, *tmp;
     for (int i = size-1; i > -1; i--){
         tmp = makeclist(arr[i]);
@@ -705,13 +664,13 @@ clist* makeclistFromArr(card *arr, int size){ //tested
     }
     return L;
 }
-void printCards(clist *cards){ //tested
+void printCards(clist *cards){
     while (cards != NULL){
         printf("%c",cards->data);
         cards = cards->next;
     }
 }
-void deal(clist **shoe, clist **cards){ //tested
+void deal(clist **shoe, clist **cards){
     clist *tmp = *cards;
     clist *tmp2 = (*shoe)->next;
     *cards = *shoe;
@@ -720,13 +679,15 @@ void deal(clist **shoe, clist **cards){ //tested
 
 }
 
-hand* makeemptyhand(){ //tested
+hand* makeemptyhand(){
     hand *h = malloc(sizeof(hand));
     h->cards = NULL;
+    // action flags
     h->canSurrender = 1;
     h->canSplit = 1;
     h->canDouble = 1;
     h->canHit = 1;
+    // payoff flags
     h->surrendered = 0;
     h->isBJ = 0;
     h->doubledDown = 0;
@@ -734,24 +695,24 @@ hand* makeemptyhand(){ //tested
     return h;
 }
 
-int numCards(hand* h){ //tested
+int numCards(hand* h){
     int n = 0;
     for (clist *p = h->cards; p != NULL; p = p->next, n++);
     return n;
 }
-void freehand(hand *h){ //tested
+void freehand(hand *h){
     freeclist(h->cards);
     free(h);
 }
 
-hlist* makehlist(hand *h){ //tested
+hlist* makehlist(hand *h){
     hlist* L = malloc(sizeof(hlist));
     L -> data = h;
     L -> next = NULL;
     return L;
 }
 
-void freehlist(hlist *L){ //tested
+void freehlist(hlist *L){
     hlist *tmp;
     while (L != NULL){
         tmp = L;
@@ -760,7 +721,7 @@ void freehlist(hlist *L){ //tested
         free(tmp);
     }
 }
-void printPlayer(hlist *L){ //tested
+void printPlayer(hlist *L){
     while (L != NULL){
         printCards(L->data->cards);
         printf(", ");
