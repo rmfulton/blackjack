@@ -70,7 +70,7 @@ void freehlist(hlist *L);
 void printPlayer(hlist *L);
 
 int main(){
-    int rsa = 1, das = 1, numDecks = 2, cutCard =26, h17 = 1, LS = 1;
+    int rsa = 1, das = 1, numDecks = 2, cutCard = 26, h17 = 1, LS = 1;
     int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
     
     int N; // the # of shoes to play through
@@ -79,7 +79,7 @@ int main(){
     int q = 31; // number of counts I will track, from -q/2 to +q/2
     int *tcFreq = calloc(q, sizeof(int));
     double *totalReturn = calloc(q, sizeof(double)); //use this to calculate expectations
-    double *totalSquares = calloc(q,sizeof(long double)); //use this to calculate variance
+    double *totalSquares = calloc(q,sizeof(double)); //use this to calculate variance
 
     printf("How many shoes would you like to play through? ");
     if (scanf("%d", &N) == 0){
@@ -99,7 +99,12 @@ int main(){
 
     return 0;
 }
-// results functions
+/*
+Should print the following for each true count:
+    - The # of rounds played
+    - The mean payoff
+    - 95% confidence interval, as measured by 2*(inter sample deviation)/N
+*/
 void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares){ //gives desired output
     int N =0;
     double S = 0;
@@ -131,8 +136,57 @@ void printResults(int q, int *tcFreq, double *totalReturn, double *totalSquares)
 ///// gameplay functions //////
 ///////////////////////////////
 
+/*
+This function should play through N numDecks-deck shoes according to Basic 
+Strategy, with gameplay proceding according to the general rules of Player
+may take insurance (but never does), then may choose whether to surrender,
+then may choose whether to split, then may choose whether to double down,
+then may choose whether to hit, otherwise stands as default. Split hands 
+can generally always be surrendered, resplit 3 times up to 4 hands total, 
+doubled down upon, and hit until they bust. Ace-Ten pairs arising after a
+split are considered 21, not a natural, and split Aces are dealt one card
+each and then must stand, except when RSA is allowed (see parameters below)
+and they split. After all players' hands are settled, the dealer hits until
+exceeding a faceValue of 17 (see h17 parameter below) or busting. If a player's
+hand busts, they lose the associated wager, even if the dealer busts as well. 
+If a player's hand's faceValue is equal to that of the dealer, the player
+"pushes", and recoups their original wager. If a player's hand exceeds that of 
+the dealer's, then they recoup twice their original wager, and if the player's
+hand is also a natural, then they recoup a total of 2.5x their original wager.
+
+following parameters:
+
+    - cutCard:      when the shoe size is this many cards,
+                    the dealer shuffles before the next hand.
+
+    - h17:          When the dealer is dealt a soft 17, this
+                    dictates whether the dealer hits
+
+    - DAS:          After a player splits their hand, this 
+                    dictates whether they can double down on
+                    the two resulting hands. Except for Aces.
+
+    - RSA:          When a player splits AA, and are dealt
+                    AA and AX, this dictates whether they 
+                    may resplit the hand AA. In general,
+                    you may split 3 times up to 4 hands.
+
+    - LS:           AFTER the dealer has peeked for blackjack
+                    (hence late), but before any other actions
+                    save insurance, a player may elect to 
+                    relinquish 1/2 of their bet and reclaim
+                    the remainder, ending the hand.
+
+    - canDoubleOn:  Some Blackjack games only permit the action
+                    of doubling down when the faceValue of the
+                    Player's hand takes certain values. This array
+                    encodes the permissibility of doubling down
+                    at every possible value.
+
+
+*/
 void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int LS, int canDoubleOn[23],
-              int q, int *tcFreq, double *totalReturn, double *totalSquares){ //incomplete + wrong header
+              int q, int *tcFreq, double *totalReturn, double *totalSquares){ 
     clist *s, *d = NULL;
     hlist *player;
     int ss, rc; //shoe size, runningcount
@@ -158,8 +212,6 @@ void simulate(int N, int numDecks, int cutCard, int h17, int DAS, int RSA, int L
             }
             tcFreq[index]++;
 
-            //TODO: 
-            //implement netPayoff
 
             // deal two cards to player and dealer.
             initialDeal(&player,&s,&d,&rc,&ss);
@@ -476,7 +528,7 @@ int shouldSplit(hand *h, card upCard, int rc, int ss,int numspl, int das){ //tes
 }
 
 int shouldDouble(hand *h, card upCard, int rc, int ss, int canDoubleOn[23]){ //tested
-    int v = facevalue(h->cards);
+    int v = faceValue(h->cards);
     if ((!h->canDouble) || (v > 21) || (v < 0) || ( !canDoubleOn[v] ) || (numCards(h)!= 2)){
         return 0;
     }
@@ -595,15 +647,18 @@ double netPayoff(hlist *player, clist *d){ //tested
     for(hlist *p = player; p != NULL; p=p->next){
         h = p->data;
         playerScore = faceValue(h->cards);
+        if (playerScore == 22 && !h->isBJ){
+            playerScore = 21;
+        }
 
         if (h->surrendered){
-            payout -= 0.5;
+            payout += -0.5;
         } else if (h->isBJ){
             payout += 1.5*(dealerScore != 22);
         } else if (playerScore == -1){
-            payout -= 1 + h->doubledDown;
+            payout += -1 - h->doubledDown;
         } else {
-            payout += (1+h->doubledDown)*((playerScore > dealerScore) - (playerScore < dealerScore));
+            payout += (1+h->doubledDown)*( (playerScore > dealerScore) - (playerScore < dealerScore) );
         }
     }
     return payout;
