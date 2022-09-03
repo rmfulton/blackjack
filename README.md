@@ -1,7 +1,7 @@
 # blackjack
 Blackjack is a popular casino card game. Rules and terminology can be found [here](https://bicyclecards.com/how-to-play/blackjack/). This repo contains a series of more and more sophisticated simulations of the game blackjack. In order of usefulness, there is:
 
-#### BS_sim.c
+#### monteCarloBS.c
 simulates heads-up play between a basic strategy player (as defined on [BJA](https://www.blackjackapprenticeship.com/blackjack-strategy-charts/)) and a dealer. Variables in main() function specify the # of decks, the shoe penetration, and rule variations. Outputs the simulated expectation per dollar bet at the overall game, as well as at every given true count from -15 to +15. (this can be changed in the main function)
 Compile and run at command line with
 
