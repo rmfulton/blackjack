@@ -11,7 +11,7 @@ bool test1(){
     if (gcd(x,y) == expected) {
         return true;
     } else {
-        cout << "error: gcd("<<x<<", "<<y<<") = " << gcd(x,y) << ", expected " << expected << endl;
+        cout << "test1 error: gcd("<<x<<", "<<y<<") = " << gcd(x,y) << ", expected " << expected << endl;
         return false;
     }
 }
@@ -23,7 +23,32 @@ bool test2() {
     if (gcd(x,y) == expected) {
         return true;
     } else {
-        cout << "error: gcd("<<x<<", "<<y<<") = " << gcd(x,y) << ", expected " << expected << endl;
+        cout << "test2 error: gcd("<<x<<", "<<y<<") = " << gcd(x,y) << ", expected " << expected << endl;
+        return false;
+    }
+}
+
+
+bool test3() {
+    int x = 12;
+    int y = 18;
+    int expected = 6;
+    if (gcd(x,y) == expected) {
+        return true;
+    } else {
+        cout << "test3 error: gcd("<<x<<", "<<y<<") = " << gcd(x,y) << ", expected " << expected << endl;
+        return false;
+    }
+}
+
+bool test4() {
+    int x = -12;
+    int y = 18;
+    int expected = 6;
+    if (gcd(x,y) == expected) {
+        return true;
+    } else {
+        cout << "test3 error: gcd("<<x<<", "<<y<<") = " << gcd(x,y) << ", expected " << expected << endl;
         return false;
     }
 }
@@ -33,6 +58,8 @@ int main() {
     bool allTestsPass = true;
     allTestsPass = allTestsPass && test1();
     allTestsPass = allTestsPass && test2();
+    allTestsPass = allTestsPass && test3();
+    allTestsPass = allTestsPass && test4();
     cout << (allTestsPass ? "All" : "Not all") << " tests pass" << endl;
     return 0;
 }
