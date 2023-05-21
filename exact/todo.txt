@@ -1,0 +1,6 @@
+1. overload arithmetic operators for the rational class
+    - addition 
+    - multiplication
+    - subtraction
+    - division
+2. Test these operators
