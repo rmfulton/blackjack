@@ -11,7 +11,10 @@ class Rational {
         Rational(int n);
         Rational(int x, int y);
         bool operator==(Rational const &other);
-        Rational operator+( Rational const &other);
+        Rational operator+(Rational const &other);
+        Rational operator-(Rational const &other);
+        Rational operator*(Rational const &other);
+        Rational operator/(Rational const &other);
 };
 
 std::ostream& operator<<(std::ostream& os, const Rational& r);

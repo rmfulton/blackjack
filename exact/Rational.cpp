@@ -31,6 +31,24 @@ Rational Rational::operator+( Rational const &other){
     return Rational(numerator, denominator);
 }
 
+Rational Rational::operator*( Rational const &other){
+    int numerator = this->p*other.p;
+    int denominator = this->q*other.q;
+    return Rational(numerator, denominator);
+}
+
+Rational Rational::operator-( Rational const &other){
+    int numerator = this->p*other.q - other.p*this->q;
+    int denominator = this->q*other.q;
+    return Rational(numerator, denominator);
+}
+
+Rational Rational::operator/( Rational const &other){
+    int numerator = this->p*other.q;
+    int denominator = this->q*other.p;
+    return Rational(numerator, denominator);
+}
+
 std::ostream& operator<<(std::ostream& os, const Rational& r)
 {
     os << r.p << " / " << r.q;
