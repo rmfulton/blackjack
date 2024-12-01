@@ -25,6 +25,10 @@ bool Rational::operator==(Rational const &other) {
     return this->p == other.p && this->q == other.q;
 }
 
+bool Rational::operator!=(Rational const &other) {
+    return this->p != other.p || this->q != other.q;
+}
+
 Rational Rational::operator+( Rational const &other){
     int numerator = this->p*other.q + other.p*this->q;
     int denominator = this->q*other.q;

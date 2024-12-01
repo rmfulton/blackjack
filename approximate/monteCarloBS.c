@@ -68,12 +68,13 @@ void printPlayer(hlist *L);
 
 int main(){
     int rsa = 1, das = 1, numDecks = 2, cutCard = 26, h17 = 1, LS = 1;
-    int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0};
+    int canDoubleOn[23] = {0,0,0,0,1,1,1,1,1,1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0};
+    //                     0,1,2,3,4,5,6,7,8,9,T,11,12,13,14,15,16,17,18,19,20,21,21.5
     
     int N; // the # of shoes to play through
     char newline;
 
-    int q = 31; // number of counts I will track, from -q/2 to +q/2
+    int q = 15; // number of counts I will track, from -q/2 to +q/2
     long int *tcFreq = calloc(q, sizeof(long int));
     long double *totalReturn = calloc(q, sizeof(long double)); //use this to calculate expectations
     long double *totalSquares = calloc(q,sizeof(long double)); //use this to calculate variance
@@ -118,15 +119,15 @@ void printResults(int q, long int *tcFreq, long double *totalReturn, long double
     printf("%11ld bets were made overall, with aggreg. exp. %9.6lf +- %.6lf\n\n", N,mu, 2*sqrt(var)/N);
     mu = totalReturn[0]/tcFreq[0];
     var = totalSquares[0] - mu*mu;
-    printf("%11ld bets were made <= true %3d, with avg exp. %9.6lf +- %.6lf\n", tcFreq[0], -q/2, mu, 2*sqrt(var)/tcFreq[0]);
+    printf("%4lf of bets were made <= true %3d, with avg exp. %9.6lf +- %.6lf\n", ((float)tcFreq[0])/N, -q/2, mu, 2*sqrt(var)/tcFreq[0]);
     for (int i = 1; i < q-1; i++){
         mu = totalReturn[i]/tcFreq[i];
         var = totalSquares[i] - mu*mu;
-        printf("%11ld bets were made at true %3d, with avg exp. %9.6lf +- %.6lf\n", tcFreq[i], i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
+        printf("%4lf of bets were made at true %3d, with avg exp. %9.6lf +- %.6lf\n", ((float)tcFreq[i])/N, i - q/2, mu, 2*sqrt(var)/tcFreq[i]);
     }
     mu = totalReturn[q-1]/tcFreq[q-1];
     var = totalSquares[q-1] - mu*mu;
-    printf("%11ld bets were made >= true %3d, with avg exp. %9.6lf +- %.6lf\n", tcFreq[q-1],q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
+    printf("%4lf of bets were made >= true %3d, with avg exp. %9.6lf +- %.6lf\n", ((float)tcFreq[q-1])/N,q/2, mu, 2*sqrt(var)/tcFreq[q-1]);
 }
 ///////////////////////////////
 ///// gameplay functions //////

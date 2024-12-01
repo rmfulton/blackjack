@@ -35,11 +35,20 @@ bool equalityTest3(){
     return genericEqualityTest( Rational(4,2), Rational(-6,-4), false);
 }
 
-bool genericAdditionTest(Rational a, Rational b, Rational result){
-    return a + b == result;
-}
+
 bool additionTest1() {
-    return genericAdditionTest(Rational(), Rational(), Rational(2));
+    bool allTrue = true;
+    for (int i = 0; i < 100; ++i){
+        for (int j = 1000; j < 1200; ++j){
+            allTrue = allTrue && Rational(i) + Rational(j) == Rational(i+j);
+            allTrue = allTrue && Rational(i) + Rational(j) != Rational(i+j+1);
+        }
+    }
+    return allTrue;
+}
+bool additionTest2() {
+    bool allTrue = true;
+    for (int i = )
 }
 bool constructorTests() {
 
@@ -49,7 +58,6 @@ bool constructorTests() {
     allTestsPass = allTestsPass && constructorTest3();
     return allTestsPass;
 }
-
 bool operatorEqualTests() {    
 
     bool allTestsPass = true;

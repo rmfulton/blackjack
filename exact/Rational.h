@@ -11,6 +11,7 @@ class Rational {
         Rational(int n);
         Rational(int x, int y);
         bool operator==(Rational const &other);
+        bool operator!=(Rational const &other);
         Rational operator+(Rational const &other);
         Rational operator-(Rational const &other);
         Rational operator*(Rational const &other);
