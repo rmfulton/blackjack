@@ -4,20 +4,29 @@
 
 using namespace std;
 
-bool genericConstructorTest(int numer, int denom){
+bool constructorTestHelper(int numer, int denom){
     int divisor = denom > 0 ? gcd(numer,denom) : -gcd(numer, denom);
     Rational x = Rational(numer,denom);
     bool result = (x.p == numer/divisor) && (x.q == denom/divisor);
     return result;
 }
-bool constructorTest1(){
-    return genericConstructorTest(3,2);
-}
-bool constructorTest2(){
-    return genericConstructorTest(6,4);
-}
-bool constructorTest3(){
-    return genericConstructorTest(6,-4);
+
+bool constructorTest(){
+    int maxValue = 10;
+    for (int denom = -maxValue; denom<maxValue + 1; ++denom){
+        if (denom == 0){
+            continue;
+        }
+        for (int numer = -maxValue; numer < maxValue + 1; ++numer){
+            bool pass = constructorTestHelper(numer, denom);
+            if (!pass){
+                std::cout << "ConstructorTest fails on numer " << numer << " and denom " << denom << std::endl;
+                return false;
+            }
+        }
+    }
+    std::cout << "ConstructorTest passes" << std::endl;
+    return true;
 }
 
 bool genericEqualityTest(Rational r1, Rational r2, bool expected){
@@ -26,13 +35,20 @@ bool genericEqualityTest(Rational r1, Rational r2, bool expected){
 }
 
 bool equalityTest1(){
-    return genericEqualityTest( Rational(3,2), Rational(-6,-4), true);
+    bool result = genericEqualityTest( Rational(3,2), Rational(-6,-4), true);
+    cout << "equalityTest1" << (result ? "Does" : "Does NOT") << "pass" << endl;
+    return result;
+    
 }
 bool equalityTest2(){
-    return genericEqualityTest( Rational(0,1), Rational(0,-4), true);
+    bool result = genericEqualityTest( Rational(0,1), Rational(0,-4), true);
+    cout << "equalityTest2" << (result ? "Does" : "Does NOT") << "pass" << endl;
+    return result;
 }
 bool equalityTest3(){
-    return genericEqualityTest( Rational(4,2), Rational(-6,-4), false);
+    bool result = genericEqualityTest( Rational(4,2), Rational(-6,-4), false);
+    cout << "equalityTest3" << (result ? "Does" : "Does NOT") << "pass" << endl;
+    return result;
 }
 
 
@@ -48,15 +64,24 @@ bool additionTest1() {
 }
 bool additionTest2() {
     bool allTrue = true;
-    for (int i = )
-}
-bool constructorTests() {
-
-    bool allTestsPass = true;
-    allTestsPass = allTestsPass && constructorTest1();
-    allTestsPass = allTestsPass && constructorTest2();
-    allTestsPass = allTestsPass && constructorTest3();
-    return allTestsPass;
+    for (int numer1 = -8; numer1 < 8; ++numer1){
+        for (int numer2 = -8; numer2 < 8;  ++numer2){
+            for(int denom1 = -8; denom1 < 8; ++denom1){
+                if(denom1 == 0){
+                    continue;
+                }
+                for(int denom2 = -8; denom2 < 8; ++denom2){
+                    if(denom2 == 0){
+                        continue;
+                    }
+                    Rational actual = Rational(numer1,denom1) + Rational(numer2, denom2);
+                    Rational expected = Rational(numer1*denom2 + denom1*numer2, denom1*denom2);
+                    allTrue = allTrue && actual == expected;
+                }
+            }
+        }
+    }
+    return allTrue;
 }
 bool operatorEqualTests() {    
 
@@ -69,12 +94,13 @@ bool operatorEqualTests() {
 bool operatorAddTests() {
     bool allTestsPass = true;
     allTestsPass = allTestsPass && additionTest1();
+    allTestsPass = allTestsPass && additionTest2();
     return allTestsPass;
 }
 
 int main() {
     bool allTestsPass = true;
-    allTestsPass = allTestsPass && constructorTests();
+    allTestsPass = allTestsPass && constructorTest();
     allTestsPass = allTestsPass && operatorEqualTests();
     allTestsPass = allTestsPass && operatorAddTests();
 
