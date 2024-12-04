@@ -53,6 +53,10 @@ Rational Rational::operator/( Rational const &other){
     return Rational(numerator, denominator);
 }
 
+float Rational::toFloat(){
+    return float(this->p)/float(this->q);
+}
+
 std::ostream& operator<<(std::ostream& os, const Rational& r)
 {
     os << r.p << " / " << r.q;

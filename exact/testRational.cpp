@@ -29,24 +29,24 @@ bool constructorTest(){
     return true;
 }
 
-bool genericEqualityTest(Rational r1, Rational r2, bool expected){
+bool EqualityTestHelper(Rational r1, Rational r2, bool expected){
     bool actual = r1 == r2;
     return actual == expected;
 }
 
 bool equalityTest1(){
-    bool result = genericEqualityTest( Rational(3,2), Rational(-6,-4), true);
+    bool result = EqualityTestHelper( Rational(3,2), Rational(-6,-4), true);
     cout << "equalityTest1" << (result ? "Does" : "Does NOT") << "pass" << endl;
     return result;
     
 }
 bool equalityTest2(){
-    bool result = genericEqualityTest( Rational(0,1), Rational(0,-4), true);
+    bool result = EqualityTestHelper( Rational(0,1), Rational(0,-4), true);
     cout << "equalityTest2" << (result ? "Does" : "Does NOT") << "pass" << endl;
     return result;
 }
 bool equalityTest3(){
-    bool result = genericEqualityTest( Rational(4,2), Rational(-6,-4), false);
+    bool result = EqualityTestHelper( Rational(4,2), Rational(-6,-4), false);
     cout << "equalityTest3" << (result ? "Does" : "Does NOT") << "pass" << endl;
     return result;
 }
@@ -83,6 +83,8 @@ bool additionTest2() {
     }
     return allTrue;
 }
+
+
 bool operatorEqualTests() {    
 
     bool allTestsPass = true;
@@ -98,12 +100,27 @@ bool operatorAddTests() {
     return allTestsPass;
 }
 
+bool toFloatTest() {
+    int max = 100;
+    for (int denom = 1; denom < max; ++denom){
+        for (int numer = -max; numer < max; ++ numer){
+            if (Rational(numer,denom).toFloat() != float(numer)/float(denom)){
+                std::cout << "toFloat test failed for numer " << numer << " and denom " << denom << "." << std::endl;
+                return false;
+            }
+        }
+    }
+    std::cout << "toFloat test passed." << std::endl;
+    return true;
+}
+
 int main() {
     bool allTestsPass = true;
     allTestsPass = allTestsPass && constructorTest();
     allTestsPass = allTestsPass && operatorEqualTests();
     allTestsPass = allTestsPass && operatorAddTests();
+    allTestsPass = allTestsPass && toFloatTest();
 
     cout << (allTestsPass ? "All" : "Not all") << " tests pass" << endl;
-    return 0;
+    return allTestsPass ? 0 : 1;
 }

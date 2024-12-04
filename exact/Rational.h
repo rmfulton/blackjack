@@ -16,6 +16,7 @@ class Rational {
         Rational operator-(Rational const &other);
         Rational operator*(Rational const &other);
         Rational operator/(Rational const &other);
+        float toFloat();
 };
 
 std::ostream& operator<<(std::ostream& os, const Rational& r);
