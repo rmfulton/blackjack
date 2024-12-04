@@ -1,5 +1,5 @@
-#include "Rational.h"
-#include "utils.h"
+#include "../exact/Rational/Rational.h"
+#include "../exact/Utils/Utils.h"
 #include <iostream>
 
 using namespace std;

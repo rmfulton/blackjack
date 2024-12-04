@@ -1,5 +1,5 @@
-#ifndef rat
-#define rat
+#ifndef RATIONAL
+#define RATIONAL
 
 #include <iostream>
 

@@ -1,5 +1,5 @@
 #include "Rational.h"
-#include "utils.h"
+#include "../Utils/Utils.h"
 #include <iostream>
 
 Rational::Rational(){

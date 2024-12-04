@@ -2,14 +2,16 @@
 #ifndef SHOE
 #define SHOE
 
-#include "Rational.h"
+#include "../Rational/Rational.h"
 class Shoe {
-    private:
-        static const unsigned num_ranks = 10;
-        int cards[num_ranks + 1];
-        int numCards;
     public:
         static const unsigned num_ranks = 10;
+        static const unsigned num_suits = 4;
+        // cards[0] will store the sum
+        int cards[num_ranks + 1];
+
+        Shoe();
+        Shoe(int numDecks);
         Rational deal_probability(int i); // should this be card ?
         Shoe shoe_after_deal(int i);
         bool operator==(Rational const &other);
